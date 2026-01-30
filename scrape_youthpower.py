@@ -106,7 +106,13 @@ def scrape_all():
             try:
                 # Wait for main content
                 WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Y-Power Score')]")))
-                time.sleep(5) # Allow data to settle
+
+                # Wait specifically for the main score to populate (usually a digit)
+                # This ensures dynamic JS components have finished rendering values
+                try:
+                    WebDriverWait(driver, 10).until(lambda d: d.find_element(By.XPATH, "//p[contains(text(), 'Y-Power Score')]/following-sibling::span[1]").text.strip().isdigit())
+                except:
+                    time.sleep(2) # Fallback sleep if digit wait fails (it might be 'N/A')
 
                 row = {"District": dist.replace("-", " ").title()}
 
