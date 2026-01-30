@@ -74,14 +74,14 @@ def detect_and_analyze_lakes(start_year=2010, end_year=2025):
         # Consistent Band Mapping functions
         def rename_l89(img):
             return img.select(
-                ['SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7'],
-                ['blue', 'green', 'red', 'nir', 'swir1', 'swir2']
+                ['SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7', 'QA_PIXEL'],
+                ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'QA_PIXEL']
             )
 
         def rename_l57(img):
             return img.select(
-                ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7'],
-                ['blue', 'green', 'red', 'nir', 'swir1', 'swir2']
+                ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7', 'QA_PIXEL'],
+                ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'QA_PIXEL']
             )
 
         def preprocess_landsat(img):
@@ -148,34 +148,11 @@ def detect_and_analyze_lakes(start_year=2010, end_year=2025):
 
     return all_results
 
-def generate_synthetic_detected_data():
-    roi_lats, roi_lons = (12.83, 13.14), (77.46, 77.78)
-    num_lakes = 25
-    master_data = []
-    for i in range(num_lakes):
-        master_data.append({'name': f"Detected_Lake_{i+1}", 'lat': np.random.uniform(*roi_lats), 'lon': np.random.uniform(*roi_lons)})
-    pd.DataFrame(master_data).to_csv('Bengaluru_Lakes_Master_Audit_2024.csv', index=False)
-
-    synthetic_data = []
-    for i in range(num_lakes):
-        lake_name, base_area = f"Lake_{i+1}", np.random.uniform(50000, 1000000)
-        for year in range(2010, 2026):
-            rainfall = 700 + np.random.normal(0, 150)
-            enc = (year - 2010) * np.random.uniform(1000, 5000)
-            lake_area = base_area - (enc * 0.7) + (rainfall * 5)
-            flood = (rainfall > 900) * (rainfall - 900) * 80 + (enc * 0.15)
-            green = base_area * 0.35 - (enc * 0.05)
-            synthetic_data.append({'Lake_Name': lake_name, 'Year': year, 'Lake_Area_sqm': max(0, lake_area), 'Rainfall_mm': max(0, rainfall), 'Green_Cover_sqm': max(0, green), 'Encroachment_sqm': enc, 'Flood_Area_sqm': max(0, flood)})
-    return synthetic_data
-
 if __name__ == "__main__":
     print("🚀 Automated Lake Detection and Analysis starting...")
     try:
         results = detect_and_analyze_lakes()
+        pd.DataFrame(results).to_csv('Bengaluru_Lakes_Time_Series_2010_2025.csv', index=False)
+        print("✅ Complete dataset saved to 'Bengaluru_Lakes_Time_Series_2010_2025.csv'")
     except Exception as e:
-        print(f"Executing Fallback due to: {e}")
-        print("Falling back to synthetic data for demonstration purposes.")
-        results = generate_synthetic_detected_data()
-
-    pd.DataFrame(results).to_csv('Bengaluru_Lakes_Time_Series_2010_2025.csv', index=False)
-    print("✅ Complete dataset saved to 'Bengaluru_Lakes_Time_Series_2010_2025.csv'")
+        print(f"❌ Error during GEE execution: {e}")
